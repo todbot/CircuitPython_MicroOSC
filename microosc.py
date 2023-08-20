@@ -53,10 +53,8 @@ impl = sys.implementation.name
 DEBUG = False
 
 if impl == "circuitpython":
-    import wifi
-    import socketpool
-
-    socket = socketpool.SocketPool(wifi.radio)
+    # import socket
+    # import socketpool
     # these defines are not yet in CirPy socket, known to work for ESP32 native WiFI
     IPPROTO_IP = 0  # super secret from @jepler
     IP_MULTICAST_TTL = 5  # super secret from @jepler
@@ -138,7 +136,8 @@ class OSCServer:
     """
     In OSC parlance, a "server" is a receiver of OSC messages, usually UDP packets.
     This OSC server is an OSC UDP receiver.
-
+    :param socket: An object that is a source of sockets. This could be a `socketpool`
+                     in CircuitPython or the `socket` module in CPython.
     :param str host: hostname or IP address to receive on,
                      can use multicast addresses like '224.0.0.1'
     :param int port: port to receive on
@@ -147,7 +146,8 @@ class OSCServer:
                      that prints out OSC messages
     """
 
-    def __init__(self, host=None, port=None, dispatch_map=None):
+    def __init__(self, socket_source, host, port, dispatch_map=None):
+        self._socket_source = socket_source
         self.host = host
         self.port = port
         self.dispatch_map = dispatch_map or default_dispatch_map
@@ -156,11 +156,13 @@ class OSCServer:
     def _server_start(self, buf_size=256, timeout=0.001, ttl=2):
         """ """
         self._buf = bytearray(buf_size)
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # UDP
+        self._sock = self._socket_source.socket(
+            self._socket_source.AF_INET, self._socket_source.SOCK_DGRAM
+        )  # UDP
         # TODO: check for IP address type? (multicast/unicast)
-        self.sock.setsockopt(IPPROTO_IP, IP_MULTICAST_TTL, ttl)
-        self.sock.bind((self.host, self.port))
-        self.sock.settimeout(timeout)
+        self._sock.setsockopt(IPPROTO_IP, IP_MULTICAST_TTL, ttl)
+        self._sock.bind((self.host, self.port))
+        self._sock.settimeout(timeout)
 
     def poll(self):
         """
@@ -170,13 +172,13 @@ class OSCServer:
         """
         try:
             # pylint: disable=unused-variable
-            datasize, addr = self.sock.recvfrom_into(self._buf)
+            datasize, addr = self._sock.recvfrom_into(self._buf)
             msg = parse_osc_packet(self._buf, datasize)
-            self.dispatch(msg)
+            self._dispatch(msg)
         except OSError:
             pass  # timeout
 
-    def dispatch(self, msg):
+    def _dispatch(self, msg):
         """:param OscMsg msg: message to be dispatched using dispatch_map"""
         for addr, func in self.dispatch_map.items():
             if msg.addr.startswith(addr):

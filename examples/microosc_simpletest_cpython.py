@@ -7,6 +7,7 @@
 
 import sys
 import time
+import socket
 
 import microosc
 
@@ -54,7 +55,7 @@ dispatch_map = {
     "/filter1": fader_handler,
 }
 
-osc_server = microosc.OSCServer(UDP_HOST, UDP_PORT, dispatch_map)
+osc_server = microosc.OSCServer(socket, UDP_HOST, UDP_PORT, dispatch_map)
 
 print("MicroOSC server started on ", UDP_HOST, UDP_PORT)
 

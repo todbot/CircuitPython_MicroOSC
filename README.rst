@@ -118,8 +118,8 @@ Usage Example
 
 .. code-block:: python
 
-    import time, os, wifi
-    import micro_osc
+    import time, os, wifi, socketpool
+    import microosc
 
     UDP_HOST = "224.0.0.1"  # multicast UDP
     UDP_PORT = 5000
@@ -130,6 +130,8 @@ Usage Example
     print("connecting to WiFi", ssid)
     wifi.radio.connect(ssid, password)
 
+    socket_pool = socketpool.SocketPool(wifi.radio)
+
     def fader_handler(msg):
        """Used to handle 'fader' OscMsgs, printing it as a '*' text progress bar
        :param OscMsg msg: message with one required float32 value
@@ -137,19 +139,21 @@ Usage Example
        print(msg.addr, "*" * int(20 * msg.args[0]))  # make a little bar chart
 
     dispatch_map = {
-        "/": lambda msg: print("/:", msg.addr, msg.args),  # prints all messages
+        "/": lambda msg: print("\t\tmsg:", msg.addr, msg.args),  # prints all messages
         "/1/fader": fader_handler,
         "/filter1": fader_handler,
     }
 
-    osc_server = micro_osc.Server(UDP_HOST, UDP_PORT)
+    osc_server = micro_osc.Server(socket_pool, UDP_HOST, UDP_PORT, dispatch_map)
 
     print("MicroOSC server started on ", UDP_HOST, UDP_PORT)
 
     last_time = time.monotonic()
 
     while True:
-        osc_server.poll(dispatch_map)  # blocks until packet comes in
+
+        osc_server.poll()
+
         if time.monotonic() - last_time > 1.0:
             last_time = time.monotonic()
             print(f"waiting {last_time:.2f}")
