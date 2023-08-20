@@ -17,14 +17,16 @@ if len(sys.argv) < 2 or len(sys.argv) > 3:
 UDP_HOST = sys.argv[1]
 UDP_PORT = int(sys.argv[2])
 
-last_velocity=0
+last_velocity = 0  # pylint: disable=invalid-name
+
+
 def note_handler(msg):
     """Used to handle 'Note1' and 'Velocity1' OscMsgs from Ableton Live.
     Live's "OscSend" plugin sends two OSC Packets for every MIDI note.
     This function reconctructs that into a single print().
     :param OscMsg msg: message with one required int32 value
     """
-    global last_velocity
+    global last_velocity  # pylint: disable=global-statement
     if msg.addr == "/Note1":
         if last_velocity != 0:
             print("NOTE ON ", msg.args[0], last_velocity)
@@ -32,6 +34,7 @@ def note_handler(msg):
             print("NOTE OFF", msg.args[0], last_velocity)
     elif msg.addr == "/Velocity1":
         last_velocity = msg.args[0]
+
 
 def fader_handler(msg):
     """Used to handle 'fader' OscMsgs, printing it as a '*' text progress bar
@@ -44,8 +47,8 @@ dispatch_map = {
     # matches all messages
     "/": lambda msg: print("\t\tmsg:", msg.addr, msg.args),
     # maches how Live's OSC MIDI Send plugin works
-    '/Note1' : note_handler,
-    '/Velocity1' : note_handler,
+    "/Note1": note_handler,
+    "/Velocity1": note_handler,
     # /1/fader3 matches how TouchOSC sends faders ,"/1" is screen, "fader3" is 3rd fader
     "/1/fader": fader_handler,
     "/filter1": fader_handler,

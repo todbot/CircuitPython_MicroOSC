@@ -25,6 +25,33 @@ Introduction
 Minimal OSC parser and server for CircuitPython and CPython
 
 
+`Open Sound Control <https://opensoundcontrol.stanford.edu/>`_ is an efficient data transport
+encoding/protocol for real-time performance messages for music or other similar endeavors.
+The OSC byte encoding is designed to be semi-human readable and efficient enough for
+UDP packet transmission.
+
+OSC Messages are defined by an "OSC Address" (e.g. "/1/faderA") and optional "OSC Arguments",
+one or more possible of several data types (e.g. float32 or int32). OSC doesn't pre-define
+specific OSC Addresses, it is up the the sender and receiver to agree upon them.
+
+This "MicroOSC" library is a minimal UDP receiver ("OSC Server") and parser of OSC packets.
+The MicroOSC UDP receiver supports both unicast and multicast UDP on both CircuitPython and CPython.
+
+
+Requirements
+============
+
+To run this library you will need one of:
+
+* CircuitPython board with native ``wifi`` support, like those based on ESP32-S2, ESP32-S3, etc.
+* Desktop Python (CPython) computer
+
+To send OSC messages, you will need an OSC UDP sender (aka "OSC client").
+Some easy-to-use OSC clients are:
+
+* `TouchOSC <https://hexler.net/touchosc>`_
+* `OSCSend for Ableton Live <https://www.ableton.com/en/packs/connection-kit/>`_
+
 Dependencies
 =============
 This driver depends on:

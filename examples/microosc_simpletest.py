@@ -20,11 +20,13 @@ password = os.getenv("CIRCUITPY_WIFI_PASSWORD")
 print("connecting to WiFi", ssid)
 wifi.radio.connect(ssid, password)
 
+
 def fader_handler(msg):
     """Used to handle 'fader' OscMsgs, printing it as a '*' text progress bar
     :param OscMsg msg: message with one required float32 value
     """
     print(msg.addr, "*" * int(20 * msg.args[0]))  # make a little bar chart
+
 
 dispatch_map = {
     "/": lambda msg: print("/:", msg.addr, msg.args),  # prints all messages
