@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: Unlicense
 
+"""Demonstrate MicroOSC library in CircuitPython, assumes native `wifi` support"""
 
 import time
 import os
@@ -46,5 +47,5 @@ while True:
     osc_server.poll(dispatch_map)  # blocks until packet comes in
     if time.monotonic() - last_time > 0.5:
         last_time = time.monotonic()
-        # print("hi")
+        print(f"waiting {last_time:.2f}")
     time.sleep(0.01)

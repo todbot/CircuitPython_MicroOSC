@@ -47,4 +47,4 @@ while True:
 
     if time.monotonic() - last_time > 0.5:
         last_time = time.monotonic()
-        print(f"waiting {time.monotonic():.2f}")
+        print(f"waiting {last_time:.2f}")
