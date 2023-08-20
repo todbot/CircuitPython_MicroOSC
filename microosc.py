@@ -44,26 +44,30 @@ from collections import namedtuple
 impl = sys.implementation.name
 DEBUG = False
 
-if impl == 'circuitpython':
+if impl == "circuitpython":
     import wifi
     import socketpool
+
     socket = socketpool.SocketPool(wifi.radio)
     # these defines are not yet in CirPy socket, known to work for ESP32 native WiFI
-    IPPROTO_IP = 0         # super secret from @jepler
-    IP_MULTICAST_TTL = 5   # super secret from @jepler
+    IPPROTO_IP = 0  # super secret from @jepler
+    IP_MULTICAST_TTL = 5  # super secret from @jepler
 else:
     import socket
+
     IPPROTO_IP = socket.IPPROTO_IP
     IP_MULTICAST_TTL = socket.IP_MULTICAST_TTL
 
 
-OscMsg = namedtuple("OscMsg", ['addr','args'])
+OscMsg = namedtuple("OscMsg", ["addr", "args"])
 """Objects returned by `parse_osc_packet()`"""
 
+# fmt: off
 """Simple example of a dispatch_map"""
 default_dispatch_map = {
-    '/' : lambda msg: print("default_map:",msg.addr, msg.args)
+    "/": lambda msg: print("default_map:", msg.addr, msg.args)
 }
+# fmt: on
 
 
 def parse_osc_packet(data, packet_size):
@@ -79,36 +83,45 @@ def parse_osc_packet(data, packet_size):
     - OSC packet size is always a multiple of 4
     """
 
-    type_start = data.find(b',')
-    type_end = type_start+4  # OSC parts are 4-byte aligned
+    type_start = data.find(b",")
+    type_end = type_start + 4  # OSC parts are 4-byte aligned
     # TODO: check type_start is 4-byte aligned
 
     oscaddr = data[:type_start].decode().rstrip("\x00")
-    osctypes = data[type_start+1:type_end].decode()
+    osctypes = data[type_start + 1 : type_end].decode()
 
     if DEBUG:
-        print('oscaddr:',oscaddr, "osctypes:", osctypes,
-              "data:", data[type_end:], packet_size-type_end, type_end, packet_size)
+        print(
+            "oscaddr:",
+            oscaddr,
+            "osctypes:",
+            osctypes,
+            "data:",
+            data[type_end:],
+            packet_size - type_end,
+            type_end,
+            packet_size,
+        )
 
     args = []
     dpos = type_end
     for otype in osctypes:
-        if otype == 'f':  # osc float32
-            arg = struct.unpack(">f", data[dpos:dpos+4])
+        if otype == "f":  # osc float32
+            arg = struct.unpack(">f", data[dpos : dpos + 4])
             args.append(arg[0])
             dpos += 4
-        elif otype == 'i': # osc int32
-            arg = struct.unpack(">i", data[dpos:dpos+4])
+        elif otype == "i":  # osc int32
+            arg = struct.unpack(">i", data[dpos : dpos + 4])
             args.append(arg[0])
             dpos += 4
-        elif otype == 's': # osc string  TODO: find OSC emitter that sends string
+        elif otype == "s":  # osc string  TODO: find OSC emitter that sends string
             arg = data.decode()
             args.append(arg[0])
             dpos += len(arg)
-        elif otype == '\x00':  # null padding
+        elif otype == "\x00":  # null padding
             pass
         else:
-            args.append("unknown type:"+otype)
+            args.append("unknown type:" + otype)
 
     return OscMsg(addr=oscaddr, args=args)
 
@@ -125,6 +138,7 @@ class OSCServer:
                      if no dispatch_map is specified, a default_map will be used
                      that prints out OSC messages
     """
+
     def __init__(self, host=None, port=None, dispatch_map=None):
         self.host = host
         self.port = port
@@ -132,10 +146,9 @@ class OSCServer:
         self._server_start()
 
     def _server_start(self, buf_size=256, timeout=0.001, ttl=2):
-        """
-        """
+        """ """
         self._buf = bytearray(buf_size)
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # UDP
         # TODO: check for IP address type? (multicast/unicast)
         self.sock.setsockopt(IPPROTO_IP, IP_MULTICAST_TTL, ttl)
         self.sock.bind((self.host, self.port))
@@ -158,5 +171,5 @@ class OSCServer:
     def dispatch(self, msg):
         """:param OscMsg msg: message to be dispatched using dispatch_map"""
         for addr, func in self.dispatch_map.items():
-            if msg.addr.startswith( addr ):
+            if msg.addr.startswith(addr):
                 func(msg)
