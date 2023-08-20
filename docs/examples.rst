@@ -1,8 +1,17 @@
-Simple test
-------------
+Simple test CircuitPython
+-------------------------
 
-Ensure your device works with this simple test.
+Create a simple CircuitPython OSC UDP Server to receive OSC Messages
 
 .. literalinclude:: ../examples/microosc_simpletest.py
     :caption: examples/microosc_simpletest.py
+    :linenos:
+
+Simple test CPython
+-------------------
+
+Create a simple desktop Python (CPython) OSC UDP Server to receive OSC Messages
+
+.. literalinclude:: ../examples/microosc_simpletest_cpython.py
+    :caption: examples/microosc_simpletest_cpython.py
     :linenos:
