@@ -17,6 +17,21 @@ if len(sys.argv) < 2 or len(sys.argv) > 3:
 UDP_HOST = sys.argv[1]
 UDP_PORT = int(sys.argv[2])
 
+last_velocity=0
+def note_handler(msg):
+    """Used to handle 'Note1' and 'Velocity1' OscMsgs from Ableton Live.
+    Live's "OscSend" plugin sends two OSC Packets for every MIDI note.
+    This function reconctructs that into a single print().
+    :param OscMsg msg: message with one required int32 value
+    """
+    global last_velocity
+    if msg.addr == "/Note1":
+        if last_velocity != 0:
+            print("NOTE ON ", msg.args[0], last_velocity)
+        else:
+            print("NOTE OFF", msg.args[0], last_velocity)
+    elif msg.addr == "/Velocity1":
+        last_velocity = msg.args[0]
 
 def fader_handler(msg):
     """Used to handle 'fader' OscMsgs, printing it as a '*' text progress bar
@@ -27,10 +42,10 @@ def fader_handler(msg):
 
 dispatch_map = {
     # matches all messages
-    "/": lambda msg: print("msg:", msg.addr, msg.args),
+    "/": lambda msg: print("\t\tmsg:", msg.addr, msg.args),
     # maches how Live's OSC MIDI Send plugin works
-    #'/Note1' : note_handler,
-    #'/Velocity1' : note_handler,
+    '/Note1' : note_handler,
+    '/Velocity1' : note_handler,
     # /1/fader3 matches how TouchOSC sends faders ,"/1" is screen, "fader3" is 3rd fader
     "/1/fader": fader_handler,
     "/filter1": fader_handler,
@@ -38,13 +53,13 @@ dispatch_map = {
 
 osc_server = microosc.OSCServer(UDP_HOST, UDP_PORT, dispatch_map)
 
-print("server started on ", UDP_HOST, UDP_PORT)
+print("MicroOSC server started on ", UDP_HOST, UDP_PORT)
 
 last_time = time.monotonic()
 
 while True:
     osc_server.poll()
 
-    if time.monotonic() - last_time > 0.5:
+    if time.monotonic() - last_time > 1.0:
         last_time = time.monotonic()
         print(f"waiting {last_time:.2f}")

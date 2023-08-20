@@ -16,19 +16,27 @@ Implementation Notes
 
 **Hardware:**
 
-.. todo:: Add links to any specific hardware product page(s), or category page(s).
-  Use unordered list & hyperlink rST inline format: "* `Link Text <url>`_"
+To run this library you will need one of:
+
+* CircuitPython board with native wifi support, like those based on ESP32-S2, ESP32-S3, etc.
+* Desktop Python (CPython) computer
+
+To send OSC messages, you will need an OSC UDP sender (aka "OSC client").
+Some easy-to-use OSC clients are:
+
+* `TouchOSC <https://hexler.net/touchosc>`_
+* `OSCSend for Ableton Live <https://www.ableton.com/en/packs/connection-kit/>`_
 
 **Software and Dependencies:**
 
 * Adafruit CircuitPython firmware for the supported boards:
   https://circuitpython.org/downloads
 
-.. todo:: Uncomment or remove the Bus Device and/or the Register library dependencies
-  based on the library's use of either.
 
-# * Adafruit's Bus Device library: https://github.com/adafruit/Adafruit_CircuitPython_BusDevice
-# * Adafruit's Register library: https://github.com/adafruit/Adafruit_CircuitPython_Register
+**References:**
+
+* `Open Sound Control Spec 1.0 <https://opensoundcontrol.stanford.edu/spec-1_0.html>`_
+
 """
 
 # imports
@@ -78,7 +86,7 @@ def parse_osc_packet(data, packet_size):
     OSC packets contain, in order:
     - a string that is the OSC Address (null-terminated), e.g. "/1/faderB"
     - a tag-type string starting with ',' and one or more 'f','i','s' types,
-        (optional, null-terminated), e.g. ",ffi" indicates two float32s, one int32
+    (optional, null-terminated), e.g. ",ffi" indicates two float32s, one int32
     - zero or more OSC Arguments in binary form, depending on tag-type string
     - OSC packet size is always a multiple of 4
     """
