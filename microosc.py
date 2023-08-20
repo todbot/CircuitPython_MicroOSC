@@ -136,17 +136,17 @@ class OSCServer:
     """
     In OSC parlance, a "server" is a receiver of OSC messages, usually UDP packets.
     This OSC server is an OSC UDP receiver.
-    :param socket: An object that is a source of sockets. This could be a `socketpool`
-                     in CircuitPython or the `socket` module in CPython.
-    :param str host: hostname or IP address to receive on,
-                     can use multicast addresses like '224.0.0.1'
-    :param int port: port to receive on
-    :param dict dispatch_map: map of OSC Addresses to functions,
-                     if no dispatch_map is specified, a default_map will be used
-                     that prints out OSC messages
     """
 
     def __init__(self, socket_source, host, port, dispatch_map=None):
+        """
+        Create an OSCServer and start it listening on a host/port.
+
+        :param socket socket_source: An object that is a source of sockets. This could be a `socketpool` in CircuitPython or the `socket` module in CPython.
+        :param str host: hostname or IP address to receive on, can use multicast addresses like '224.0.0.1'
+        :param int port: port to receive on
+        :param dict dispatch_map: map of OSC Addresses to functions, if no dispatch_map is specified, a default_map will be used that prints out OSC messages
+        """
         self._socket_source = socket_source
         self.host = host
         self.port = port
