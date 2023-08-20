@@ -38,17 +38,15 @@ __repo__ = "https://github.com/todbot/CircuitPython_MicroOSC.git"
 
 
 import sys
-import time
 import struct
 from collections import namedtuple
 
 impl = sys.implementation.name
-debug = False
+DEBUG = False
 
 if impl == 'circuitpython':
     import wifi
     import socketpool
-    import ipaddress
     socket = socketpool.SocketPool(wifi.radio)
     # these defines are not yet in CirPy socket, known to work for ESP32 native WiFI
     IPPROTO_IP = 0         # super secret from @jepler
@@ -88,29 +86,29 @@ def parse_osc_packet(data, packet_size):
     oscaddr = data[:type_start].decode().rstrip("\x00")
     osctypes = data[type_start+1:type_end].decode()
 
-    if debug:
+    if DEBUG:
         print('oscaddr:',oscaddr, "osctypes:", osctypes,
               "data:", data[type_end:], packet_size-type_end, type_end, packet_size)
 
     args = []
     dpos = type_end
-    for t in osctypes:
-        if t == 'f':  # osc float32
+    for otype in osctypes:
+        if otype == 'f':  # osc float32
             arg = struct.unpack(">f", data[dpos:dpos+4])
             args.append(arg[0])
             dpos += 4
-        elif t == 'i': # osc int32
+        elif otype == 'i': # osc int32
             arg = struct.unpack(">i", data[dpos:dpos+4])
             args.append(arg[0])
             dpos += 4
-        elif t == 's': # osc string  TODO: find OSC emitter that sends string
+        elif otype == 's': # osc string  TODO: find OSC emitter that sends string
             arg = data.decode()
             args.append(arg[0])
             dpos += len(arg)
-        elif t == '\x00':  # null padding
+        elif otype == '\x00':  # null padding
             pass
         else:
-            args.append("unknown type:"+t)
+            args.append("unknown type:"+otype)
 
     return OscMsg(addr=oscaddr, args=args)
 
@@ -127,10 +125,10 @@ class OSCServer:
                      if no dispatch_map is specified, a default_map will be used
                      that prints out OSC messages
     """
-    def __init__(self, host=None, port=None, dispatch_map=default_dispatch_map):
+    def __init__(self, host=None, port=None, dispatch_map=None):
         self.host = host
         self.port = port
-        self.dispatch_map = dispatch_map
+        self.dispatch_map = dispatch_map or default_dispatch_map
         self._server_start()
 
     def _server_start(self, buf_size=256, timeout=0.001, ttl=2):
@@ -150,10 +148,11 @@ class OSCServer:
         dispatched to your provided handler functions specified in your dispatch_map.
         """
         try:
+            # pylint: disable=unused-variable
             datasize, addr = self.sock.recvfrom_into(self._buf)
             msg = parse_osc_packet(self._buf, datasize)
             self.dispatch(msg)
-        except OSError as ex:
+        except OSError:
             pass  # timeout
 
     def dispatch(self, msg):
