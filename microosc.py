@@ -58,6 +58,7 @@ if impl == "circuitpython":
     IP_MULTICAST_TTL = 5  # super secret from @jepler
 else:
     import socket
+
     IPPROTO_IP = socket.IPPROTO_IP
     IP_MULTICAST_TTL = socket.IP_MULTICAST_TTL
 
@@ -71,6 +72,7 @@ default_dispatch_map = {
 }
 """Simple example of a dispatch_map"""
 # fmt: on
+
 
 def parse_osc_packet(data, packet_size):
     """Parse OSC packets into OscMsg objects.
