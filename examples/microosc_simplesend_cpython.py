@@ -36,7 +36,7 @@ msg = microosc.OscMsg( "/1/xy1", [0.99, 0.3, ], ("f", "f", ) )  # fmt: skip
 
 i = 100
 while True:
-    msg.args[0] = i * 0.01  #move the value a bit
+    msg.args[0] = i * 0.01  # move the value a bit
 
     pkt_size = osc_client.send(msg)
     print("packet_size sent:", pkt_size, "msg:", msg)
