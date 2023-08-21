@@ -52,6 +52,11 @@ Some easy-to-use OSC clients are:
 * `TouchOSC <https://hexler.net/touchosc>`_
 * `OSCSend for Ableton Live <https://www.ableton.com/en/packs/connection-kit/>`_
 
+To receive OSC messages, you will need an OSC UDP receiver (aka "OSC server").
+Some easy-to-use OSC clients are:
+
+* `Protokol for Mac/Win/Linux/iOS/Android <https://hexler.net/protokol>`_
+
 Dependencies
 =============
 This driver depends on:
