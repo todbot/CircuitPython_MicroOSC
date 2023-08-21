@@ -20,6 +20,7 @@ password = os.getenv("CIRCUITPY_WIFI_PASSWORD")
 
 print("connecting to WiFi", ssid)
 wifi.radio.connect(ssid, password)
+print("my ip address:", wifi.radio.ipv4_address)
 
 socket_pool = socketpool.SocketPool(wifi.radio)
 

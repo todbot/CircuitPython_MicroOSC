@@ -53,14 +53,11 @@ impl = sys.implementation.name
 DEBUG = False
 
 if impl == "circuitpython":
-    # import socket
-    # import socketpool
     # these defines are not yet in CirPy socket, known to work for ESP32 native WiFI
     IPPROTO_IP = 0  # super secret from @jepler
     IP_MULTICAST_TTL = 5  # super secret from @jepler
 else:
     import socket
-
     IPPROTO_IP = socket.IPPROTO_IP
     IP_MULTICAST_TTL = socket.IP_MULTICAST_TTL
 
@@ -75,19 +72,20 @@ default_dispatch_map = {
 """Simple example of a dispatch_map"""
 # fmt: on
 
-
 def parse_osc_packet(data, packet_size):
     """Parse OSC packets into OscMsg objects.
-    OSC packets contain, in order::
 
-      * a string that is the OSC Address (null-terminated), e.g. "/1/faderB"
-      * a tag-type string starting with ',' and one or more 'f','i','s' types,
-      (optional, null-terminated), e.g. ",ffi" indicates two float32s, one int32
-      * zero or more OSC Arguments in binary form, depending on tag-type string
-      * OSC packet size is always a multiple of 4
+    OSC packets contain, in order
+
+      - a string that is the OSC Address (null-terminated), e.g. "/1/faderB"
+      - a tag-type string starting with ',' and one or more 'f', 'i', 's' types,
+        (optional, null-terminated), e.g. ",ffi" indicates two float32s, one int32
+      - zero or more OSC Arguments in binary form, depending on tag-type string
+
+    OSC packet size is always a multiple of 4
 
     :param bytearray data: a data buffer containing a binary OSC packet
-    :param int datasize: the size of the OSC packet (may be smaller than len(data))
+    :param int packet_size: the size of the OSC packet (may be smaller than len(data))
     """
     # examples of OSC packets
     # https://opensoundcontrol.stanford.edu/spec-1_0-examples.html

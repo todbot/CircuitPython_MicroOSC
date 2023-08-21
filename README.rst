@@ -22,7 +22,7 @@ Introduction
     :target: https://github.com/psf/black
     :alt: Code Style: Black
 
-Minimal OSC parser and server for CircuitPython and CPython
+Minimal OSC parser, server, and client for CircuitPython and CPython
 
 
 `Open Sound Control <https://opensoundcontrol.stanford.edu/>`_ is an efficient data transport
