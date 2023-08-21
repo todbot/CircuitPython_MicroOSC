@@ -65,14 +65,14 @@ else:
     IP_MULTICAST_TTL = socket.IP_MULTICAST_TTL
 
 
-OscMsg = namedtuple("OscMsg", ["addr", "args"])
+OscMsg = namedtuple("OscMsg", ["addr", "args", "types"])
 """Objects returned by `parse_osc_packet()`"""
 
 # fmt: off
-"""Simple example of a dispatch_map"""
 default_dispatch_map = {
     "/": lambda msg: print("default_map:", msg.addr, msg.args)
 }
+"""Simple example of a dispatch_map"""
 # fmt: on
 
 
@@ -84,11 +84,13 @@ def parse_osc_packet(data, packet_size):
     OSC packets contain, in order:
     - a string that is the OSC Address (null-terminated), e.g. "/1/faderB"
     - a tag-type string starting with ',' and one or more 'f','i','s' types,
-    (optional, null-terminated), e.g. ",ffi" indicates two float32s, one int32
+      (optional, null-terminated), e.g. ",ffi" indicates two float32s, one int32
     - zero or more OSC Arguments in binary form, depending on tag-type string
     - OSC packet size is always a multiple of 4
     """
-
+    # examples of OSC packets
+    # https://opensoundcontrol.stanford.edu/spec-1_0-examples.html
+    # spec: https://opensoundcontrol.stanford.edu/spec-1_0.html#osc-packets
     type_start = data.find(b",")
     type_end = type_start + 4  # OSC parts are 4-byte aligned
     # TODO: check type_start is 4-byte aligned
@@ -96,40 +98,82 @@ def parse_osc_packet(data, packet_size):
     oscaddr = data[:type_start].decode().rstrip("\x00")
     osctypes = data[type_start + 1 : type_end].decode()
 
+    # fmt: off
     if DEBUG:
-        print(
-            "oscaddr:",
-            oscaddr,
-            "osctypes:",
-            osctypes,
-            "data:",
-            data[type_end:],
-            packet_size - type_end,
-            type_end,
-            packet_size,
-        )
+        print("oscaddr:", oscaddr, "osctypes:", osctypes, "data:", data[type_end:],
+              packet_size - type_end, type_end, packet_size )
+    # fmt: on
 
     args = []
+    types = []
     dpos = type_end
     for otype in osctypes:
         if otype == "f":  # osc float32
             arg = struct.unpack(">f", data[dpos : dpos + 4])
             args.append(arg[0])
+            types.append('f')
             dpos += 4
         elif otype == "i":  # osc int32
             arg = struct.unpack(">i", data[dpos : dpos + 4])
             args.append(arg[0])
+            types.append('i')
             dpos += 4
         elif otype == "s":  # osc string  TODO: find OSC emitter that sends string
             arg = data.decode()
             args.append(arg[0])
+            types.append('s')
             dpos += len(arg)
         elif otype == "\x00":  # null padding
             pass
         else:
             args.append("unknown type:" + otype)
 
-    return OscMsg(addr=oscaddr, args=args)
+    return OscMsg(addr=oscaddr, args=args, types=types)
+
+
+def create_osc_packet(msg,data):
+    """
+    :param OscMsg msg: OscMsg to convert into an OSC Packet
+    :param bytearray data: an empty data buffer to write OSC Packet into
+
+    :return size of actual OSC Packet written into data buffer
+    """
+    #print("msg:",msg)
+    addr_endpos = len(msg.addr)
+    num_extra_addr_nulls = 4 - (len(msg.addr) % 4)
+    types_pos = addr_endpos + num_extra_addr_nulls
+    num_extra_types_nulls = 4 - (len(msg.args) % 4+1)
+    args_pos = types_pos + 1 + len(msg.args) + num_extra_types_nulls
+
+    #print(addr_endpos, num_extra_addr_nulls, types_pos, num_extra_types_nulls, args_pos)
+
+    # copy osc addr into data buffer, and fill out the required nulls
+    data[0:addr_endpos] = msg.addr.encode('utf-8')
+    data[addr_endpos:addr_endpos+num_extra_addr_nulls] = b'\x00' * num_extra_addr_nulls
+    data[addr_endpos:addr_endpos+num_extra_addr_nulls] = b'\x00' * num_extra_addr_nulls
+
+    #print("dat1:",data)
+
+    # if there are OSC Arguments, march through them filling out the type field and arg fields
+    if len(msg.args) > 0:
+        data[types_pos] = ord(',')  # start of type section
+        types_pos += 1
+
+        for oarg,otype in zip(msg.args, msg.types):
+            data[types_pos] = ord(otype)  # stick a type in type area
+            types_pos += 1
+            if otype == 'f':
+                data[args_pos:args_pos+4] = struct.pack(">f", oarg)
+                args_pos += 4
+            elif otype == 'i':
+                data[args_pos:args_pos+4] = struct.pack(">i", oarg)
+                args_pos += 4
+            elif otype == 's':
+                data[args_pos:args_pos+len(oarg)] = struct.pack(">%ds" % len(oarg), oarg)
+                args_pos += len(oarg)
+
+    #print("ret data:", len(data), data)
+    return args_pos  # actual size of osc packet constructed
 
 
 class OSCServer:
@@ -156,7 +200,7 @@ class OSCServer:
         self.dispatch_map = dispatch_map or default_dispatch_map
         self._server_start()
 
-    def _server_start(self, buf_size=256, timeout=0.001, ttl=2):
+    def _server_start(self, buf_size=128, timeout=0.001, ttl=2):
         """ """
         self._buf = bytearray(buf_size)
         self._sock = self._socket_source.socket(
@@ -186,3 +230,42 @@ class OSCServer:
         for addr, func in self.dispatch_map.items():
             if msg.addr.startswith(addr):
                 func(msg)
+
+class OSCClient:
+    """
+    In OSC parlance, a "client" is a sender of OSC messages, usually UDP packets.
+    This OSC client is an OSC UDP sender.
+    """
+    def __init__(self, socket_source, host, port, buf_size=128):
+        """
+        Create an OSCClient ready to send to a host/port.
+
+        :param socket socket_source: An object that is a source of sockets.
+          This could be a `socketpool` in CircuitPython or the `socket` module in CPython.
+        :param str host: hostname or IP address to send to,
+          can use multicast addresses like '224.0.0.1'
+        :param int port: port to send to
+        :param buf_size size of UDP buffer to use
+        """
+        self._socket_source = socket_source
+        self.host = host
+        self.port = port
+        self._buf = bytearray(buf_size)
+
+    def send(self, msg):
+        """
+        Send an OSC Message.
+
+        :param OscMsg msg: the OSC Message to send
+        :return return code from socket.sendto()
+
+        """
+        self._sock = self._socket_source.socket(
+            self._socket_source.AF_INET, self._socket_source.SOCK_DGRAM
+        )
+        # TODO: check for IP address type? (multicast/unicast)
+        ttl = 2
+        self._sock.setsockopt(IPPROTO_IP, IP_MULTICAST_TTL, ttl)
+
+        pkt_size = create_osc_packet(msg, self._buf)
+        return self._sock.sendto(self._buf[:pkt_size], (self.host, self.port))
