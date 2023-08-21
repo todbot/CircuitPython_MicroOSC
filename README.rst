@@ -159,6 +159,13 @@ Usage Example
             print(f"waiting {last_time:.2f}")
 
 
+References
+==========
+
+* `Open Sound Control Spec 1.0 <https://opensoundcontrol.stanford.edu/spec-1_0.html>`_
+* `OSC Message examples <https://opensoundcontrol.stanford.edu/spec-1_0-examples.html>`_
+* `OSC info and tools <https://wiki.thingsandstuff.org/OSC>`_
+* `TouchOSC apps for Mac/Win/Linux <https://hexler.net/touchosc>`_
 
 Documentation
 =============
