@@ -12,7 +12,8 @@ import socketpool
 
 import microosc
 
-UDP_HOST = "224.0.0.1"  # multicast UDP
+UDP_HOST = ""  # set to empty string to auto-set unicast UDP
+# UDP_HOST = "224.0.0.1"  # multicast UDP
 UDP_PORT = 5000
 
 ssid = os.getenv("CIRCUITPY_WIFI_SSID")
@@ -42,6 +43,10 @@ def test_low_level():
 
 
 test_low_level()
+
+if not UDP_HOST:
+    # fall back to non-multicast UDP on my IP addr
+    UDP_HOST = str(wifi.radio.ipv4_address)
 
 osc_client = microosc.OSCClient(socket_pool, "224.0.0.1", 5000)
 

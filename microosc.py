@@ -210,8 +210,8 @@ class OSCServer:
         self._sock = self._socket_source.socket(
             self._socket_source.AF_INET, self._socket_source.SOCK_DGRAM
         )  # UDP
-        # TODO: check for IP address type? (multicast/unicast)
-        self._sock.setsockopt(IPPROTO_IP, IP_MULTICAST_TTL, ttl)
+        if self.host.startswith("224"):  # multicast
+            self._sock.setsockopt(IPPROTO_IP, IP_MULTICAST_TTL, ttl)
         self._sock.bind((self.host, self.port))
         self._sock.settimeout(timeout)
 
