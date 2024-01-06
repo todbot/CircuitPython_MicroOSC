@@ -260,9 +260,9 @@ class OSCClient:
         self._sock = self._socket_source.socket(
             self._socket_source.AF_INET, self._socket_source.SOCK_DGRAM
         )
-        # TODO: check for IP address type? (multicast/unicast)
-        ttl = 2
-        self._sock.setsockopt(IPPROTO_IP, IP_MULTICAST_TTL, ttl)
+        if self.host.startswith("224"):  # multicast
+            ttl = 2  # TODO: make this an arg?
+            self._sock.setsockopt(IPPROTO_IP, IP_MULTICAST_TTL, ttl)
 
     def send(self, msg):
         """
