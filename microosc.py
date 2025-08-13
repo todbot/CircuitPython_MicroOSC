@@ -73,6 +73,13 @@ default_dispatch_map = {
 """Simple example of a dispatch_map"""
 # fmt: on
 
+def read_string(data, pos):
+    """ read padded string from a position, return string and new end pos """
+    str_end = data.index(b'\x00', pos)  # from pos find null
+    str_len = str_end - pos
+    padded_len = (str_len // 4 + 1) * 4  # account for variable null-padding
+    return  str(data[pos : pos+str_len], 'ascii'), pos + padded_len
+
 
 def parse_osc_packet(data, packet_size):
     """Parse OSC packets into OscMsg objects.
@@ -92,22 +99,21 @@ def parse_osc_packet(data, packet_size):
     # examples of OSC packets
     # https://opensoundcontrol.stanford.edu/spec-1_0-examples.html
     # spec: https://opensoundcontrol.stanford.edu/spec-1_0.html#osc-packets
-    type_start = data.find(b",")
-    type_end = type_start + 4  # OSC parts are 4-byte aligned
-    # TODO: check type_start is 4-byte aligned
 
-    oscaddr = data[:type_start].decode().rstrip("\x00")
-    osctypes = data[type_start + 1 : type_end].decode()
+    dpos = 0
+    oscaddr, dpos = read_string(data, dpos)
+    osctypes, dpos = read_string(data, dpos)
+    osctypes = osctypes[1:]  # first element is ',' separator
 
     # fmt: off
     if DEBUG:
-        print("oscaddr:", oscaddr, "osctypes:", osctypes, "data:", data[type_end:],
-              packet_size - type_end, type_end, packet_size )
+        print("data:", data)
+        print("oscaddr:", oscaddr, "osctypes:", osctypes)
     # fmt: on
 
     args = []
     types = []
-    dpos = type_end
+    
     for otype in osctypes:
         if otype == "f":  # osc float32
             arg = struct.unpack(">f", data[dpos : dpos + 4])
@@ -120,10 +126,9 @@ def parse_osc_packet(data, packet_size):
             types.append("i")
             dpos += 4
         elif otype == "s":  # osc string  TODO: find OSC emitter that sends string
-            arg = data.decode()
-            args.append(arg[0])
+            arg, dpos = read_string(data, dpos)
+            args.append(arg)
             types.append("s")
-            dpos += len(arg)
         elif otype == "\x00":  # null padding
             pass
         else:
@@ -168,12 +173,14 @@ def create_osc_packet(msg, data):
                 data[args_pos : args_pos + 4] = struct.pack(">f", oarg)
                 args_pos += 4
             elif otype == "i":
+                #print("oarg:", oarg, type(oarg))
                 data[args_pos : args_pos + 4] = struct.pack(">i", oarg)
                 args_pos += 4
             elif otype == "s":
-                data[args_pos : args_pos + len(oarg)] = struct.pack(
-                    f">{len(oarg)}s", oarg
-                )
+                #print("oarg s:", oarg)
+                data[args_pos : args_pos + len(oarg)] = struct.pack(">5s", bytes(oarg, 'latin1'))
+                # bytes(oarg, 'utf-8')
+                # struct.pack(f">{len(oarg)}s", oarg)
                 args_pos += len(oarg)
 
     # print("ret data:", len(data), data)
