@@ -6,21 +6,18 @@ Introduction
     :target: https://circuitpython-microosc.readthedocs.io/
     :alt: Documentation Status
 
-
-
 .. image:: https://img.shields.io/discord/327254708534116352.svg
     :target: https://adafru.it/discord
     :alt: Discord
-
 
 .. image:: https://github.com/todbot/CircuitPython_MicroOSC/workflows/Build%20CI/badge.svg
     :target: https://github.com/todbot/CircuitPython_MicroOSC/actions
     :alt: Build Status
 
+.. image:: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json
+    :target: https://github.com/astral-sh/ruff
+    :alt: Code Style: Ruff
 
-.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
-    :target: https://github.com/psf/black
-    :alt: Code Style: Black
 
 Minimal OSC parser, server, and client for CircuitPython and CPython
 
