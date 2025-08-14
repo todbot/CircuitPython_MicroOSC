@@ -37,6 +37,13 @@ specific OSC Addresses, it is up the the sender and receiver to agree upon them.
 This "MicroOSC" library is a minimal UDP receiver ("OSC Server") and parser of OSC packets.
 The MicroOSC UDP receiver supports both unicast and multicast UDP on both CircuitPython and CPython.
 
+Since this is a minimal OSC library, it can parse and emit OSC packets with
+only the following OSC data types:
+
+* floating point numbers ("float32")
+* integer numbers ("int32")
+* strings
+
 
 Requirements
 ============
@@ -178,6 +185,11 @@ API documentation for this library can be found on `Read the Docs <https://circu
 
 For information on building library documentation, please check out
 `this guide <https://learn.adafruit.com/creating-and-sharing-a-circuitpython-library/sharing-our-docs-on-readthedocs#sphinx-5-1>`_.
+
+Testing
+=======
+
+Install ``pytest`` with ``pip3 install pytest --upgrade`` and run ``pytest -v``
 
 Contributing
 ============

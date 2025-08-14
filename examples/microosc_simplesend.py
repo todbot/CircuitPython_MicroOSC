@@ -25,31 +25,13 @@ print("my ip address:", wifi.radio.ipv4_address)
 
 socket_pool = socketpool.SocketPool(wifi.radio)
 
-
-# test low-level functions
-def test_low_level():
-    """Test internals of microosc a little"""
-    packet = bytearray(256)
-    # data = bytearray(('b\x21' * 256).encode())
-    # msg = microosc.OscMsg('/1/fader1', [1234,], ('i',))
-    # msg = microosc.OscMsg('/1/fader1', [0.99,], ('f',))
-    msg1 = microosc.OscMsg("/1/xy1", [ 0.99, 0.3, ], ( "f", "f", ) )  # fmt: skip
-
-    print("msg1:", msg1)
-    packet_size = microosc.create_osc_packet(msg1, packet)
-    print("packet_size:", packet_size)
-    msg2 = microosc.parse_osc_packet(packet, packet_size)
-    print("msg2:", msg2)
-
-
-test_low_level()
-
 if not UDP_HOST:
     # fall back to non-multicast UDP on my IP addr
     UDP_HOST = str(wifi.radio.ipv4_address)
 
 osc_client = microosc.OSCClient(socket_pool, "224.0.0.1", 5000)
 
+# two floats
 msg = microosc.OscMsg( "/1/xy1", [0.99, 0.3, ], ("f", "f", ) )  # fmt: skip
 
 i = 100

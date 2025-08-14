@@ -14,6 +14,14 @@ Minimal OSC parser, server, and client for CircuitPython and CPython
 Implementation Notes
 --------------------
 
+This is a minimal OSC library.  It can parse and emit OSC packets with the
+following OSC data types:
+
+* floating point numbers ("float32")
+* integer numbers ("int32")
+* strings
+
+
 **Hardware:**
 
 To run this library you will need one of:
@@ -73,15 +81,28 @@ default_dispatch_map = {
 """Simple example of a dispatch_map"""
 # fmt: on
 
+
 def read_string(data, pos):
-    """ read padded string from a position, return string and new end pos """
-    str_end = data.index(b'\x00', pos)  # from pos find null
+    """Read padded string from a position, return string and new end pos"""
+    str_end = data.index(b"\x00", pos)  # from pos find null
     str_len = str_end - pos
     padded_len = (str_len // 4 + 1) * 4  # account for variable null-padding
-    return  str(data[pos : pos+str_len], 'ascii'), pos + padded_len
+    return str(data[pos : pos + str_len], "ascii"), pos + padded_len
 
 
-def parse_osc_packet(data, packet_size):
+def pack_string(astr, data, pos):
+    """Pack a string s into data bytearray at position pos, returns new end pos"""
+    n = len(astr) + 1  # for the added extra \x00
+    pos_end = pos + n
+    data[pos:pos_end] = bytes(astr + "\x00", "ascii")
+    if pad_needed := n % 4:
+        extra = 4 - pad_needed
+        data[pos_end : pos_end + extra] = bytes("\x00" * extra, "ascii")
+        pos_end = pos_end + extra
+    return pos_end
+
+
+def parse_osc_packet(data, packet_size):  # pylint: disable=unused-variable
     """Parse OSC packets into OscMsg objects.
 
     OSC packets contain, in order
@@ -113,7 +134,7 @@ def parse_osc_packet(data, packet_size):
 
     args = []
     types = []
-    
+
     for otype in osctypes:
         if otype == "f":  # osc float32
             arg = struct.unpack(">f", data[dpos : dpos + 4])
@@ -144,47 +165,26 @@ def create_osc_packet(msg, data):
 
     :return size of actual OSC Packet written into data buffer
     """
-    # print("msg:",msg)
-    addr_endpos = len(msg.addr)
-    num_addr_nulls = 4 - (len(msg.addr) % 4)
-    types_pos = addr_endpos + num_addr_nulls
-    num_types_nulls = 4 - (len(msg.args) % 4 + 1)
-    types_end_pos = types_pos + 1 + len(msg.args)
-    args_pos = types_pos + 1 + len(msg.args) + num_types_nulls
+    if DEBUG:
+        print("create_osc_packet:", msg)
 
-    # print(addr_endpos, num_addr_nulls, types_pos, num_types_nulls, args_pos)
+    # create header of OSC addr and OSC types
+    pos = pack_string(msg.addr, data, 0)
+    pos = pack_string("," + "".join(msg.types), data, pos)
 
-    # copy osc addr into data buffer, and fill out the required nulls
-    data[0:addr_endpos] = msg.addr.encode("utf-8")
-    data[addr_endpos : addr_endpos + num_addr_nulls] = b"\x00" * num_addr_nulls
-    data[types_end_pos : types_end_pos + num_types_nulls] = b"\x00" * num_types_nulls
-
-    # print("dat1:",data)
-
-    # if there are OSC Arguments, march through them filling out the type field and arg fields
+    # if there are OSC Arguments, march through them
     if len(msg.args) > 0:
-        data[types_pos] = ord(",")  # start of type section
-        types_pos += 1
-
         for oarg, otype in zip(msg.args, msg.types):
-            data[types_pos] = ord(otype)  # stick a type in type area
-            types_pos += 1
             if otype == "f":
-                data[args_pos : args_pos + 4] = struct.pack(">f", oarg)
-                args_pos += 4
+                data[pos : pos + 4] = struct.pack(">f", float(oarg))
+                pos += 4
             elif otype == "i":
-                #print("oarg:", oarg, type(oarg))
-                data[args_pos : args_pos + 4] = struct.pack(">i", oarg)
-                args_pos += 4
+                data[pos : pos + 4] = struct.pack(">i", int(oarg))
+                pos += 4
             elif otype == "s":
-                #print("oarg s:", oarg)
-                data[args_pos : args_pos + len(oarg)] = struct.pack(">5s", bytes(oarg, 'latin1'))
-                # bytes(oarg, 'utf-8')
-                # struct.pack(f">{len(oarg)}s", oarg)
-                args_pos += len(oarg)
+                pos = pack_string(oarg, data, pos)
 
-    # print("ret data:", len(data), data)
-    return args_pos  # actual size of osc packet constructed
+    return pos
 
 
 class OSCServer:

@@ -5,7 +5,6 @@
 
 """Demonstrate MicroOSC library in CircuitPython, assumes native `wifi` support"""
 
-
 import time
 import os
 import wifi

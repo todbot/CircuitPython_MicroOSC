@@ -18,7 +18,7 @@ if len(sys.argv) < 2 or len(sys.argv) > 3:
 UDP_HOST = sys.argv[1]
 UDP_PORT = int(sys.argv[2])
 
-last_velocity = 0  # pylint: disable=invalid-name
+last_velocity = 0
 
 
 def note_handler(msg):
@@ -46,7 +46,9 @@ def fader_handler(msg):
 
 dispatch_map = {
     # matches all messages
-    "/": lambda msg: print("\t\tmsg:", msg.addr, msg.args),
+    "/": lambda msg: print(
+        "\tmsg:", msg.addr, msg.args, "types:" + ",".join(msg.types)
+    ),
     # maches how Live's OSC MIDI Send plugin works
     "/Note1": note_handler,
     "/Velocity1": note_handler,
@@ -64,6 +66,6 @@ last_time = time.monotonic()
 while True:
     osc_server.poll()
 
-    if time.monotonic() - last_time > 1.0:
+    if time.monotonic() - last_time > 5.0:
         last_time = time.monotonic()
         print(f"waiting {last_time:.2f}")
